@@ -1,2 +1,2 @@
-# livox_mvs_ros_driver
+# livox_mvs_ros
 Simple and easy-to-use ROS drivers for Livox and Hikvision devices.
