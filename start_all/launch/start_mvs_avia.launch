@@ -1,0 +1,8 @@
+<launch>
+
+  <!-- 启动 mvs_ros_driver 包的 launch 文件 -->
+  <include file="$(find mvs_ros_driver)/launch/mvs_camera_trigger.launch" />
+
+  <!-- 启动 livox_ros_driver 包的 launch 文件 -->
+  <include file="$(find livox_ros_driver)/launch/livox_lidar_msg.launch" />
+</launch>
