@@ -5,4 +5,7 @@
 
   <!-- 启动 livox_ros_driver2 包的 launch 文件 -->
   <include file="$(find livox_ros_driver2)/launch_ROS1/rviz_MID360.launch" />
+
+  <!-- 启动 rviz 可视化 -->
+  <node name="rviz" pkg="rviz" type="rviz" respawn="true" args="-d $(find start_all)/display.rviz"/>
 </launch>
