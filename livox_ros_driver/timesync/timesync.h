@@ -30,6 +30,8 @@
 #include "comm_protocol.h"
 #include "user_uart.h"
 
+#include <memory>
+
 namespace livox_ros {
 
 typedef void (*FnReceiveSyncTimeCb)(const char *rmc, uint32_t rmc_length,
