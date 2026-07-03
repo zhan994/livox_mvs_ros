@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(mvs_ros_driver)
 set(cv_bridge_DIR /usr/local/share/cv_bridge/cmake) 
 
-add_compile_options(-std=c++14)
+add_compile_options(-std=c++17)
 
 if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
   LINK_DIRECTORIES(/opt/MVS/lib/aarch64/)

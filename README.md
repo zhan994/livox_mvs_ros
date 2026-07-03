@@ -2,7 +2,7 @@
 
 ***Simple and easy-to-use ROS drivers for Livox and Hikvision devices.***
 
-***This branch is used for ROS-Noetic on Ubuntu20.04.***
+***This branch is used for ROS-One on Ubuntu22.04.***
 
 - **livox_ros_driver**: for Livox AVIA.
 - **livox_ros_driver2**: for Livox MID360.
