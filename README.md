@@ -2,7 +2,13 @@
 
 ***Simple and easy-to-use ROS drivers for Livox and Hikvision devices.***
 
-***This branch is used for ROS-One on Ubuntu22.04.***
+***Supported Platforms***
+
+- ROS-Noetic on Ubuntu20.04
+- ROS-One on Ubuntu22.04
+
+
+***SDK Packages***
 
 - **livox_ros_driver**: for Livox AVIA.
 - **livox_ros_driver2**: for Livox MID360.
@@ -17,4 +23,8 @@ cd ws_sensor/src
 git clone git@github.com:zhan994/livox_mvs_ros.git
 cd livox_mvs_ros/livox_ros_driver2
 ./build.sh ROS1
+
+cd ../../..
+source devel/setup.bash
+roslaunch start_all start_mvs_mid360.launch
 ```
