@@ -33,6 +33,10 @@ cd livox_mvs_ros/livox_ros_driver2
 cd ../../..
 source devel/setup.bash
 roslaunch start_all start_mvs_mid360.launch
+
+# for gnss_ros_driver
+# sudo chmod 777 <serial_port>
+roslaunch gnss_ros_driver gnss_ros_driver.launch
 ```
 
 ## Related Work

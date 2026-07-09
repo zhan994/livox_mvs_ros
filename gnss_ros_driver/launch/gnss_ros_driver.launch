@@ -9,11 +9,7 @@
   <arg name="publish_unmatched_gga" default="false" />
   <arg name="publish_invalid" default="false" />
 
-  <node pkg="gnss_ros_driver"
-        type="gnss_ros_driver"
-        name="um982_nmea_navsatfix_node"
-        output="screen"
-        launch-prefix="bash -c 'sudo chmod 777 $(arg port); exec &quot;$0&quot; &quot;$@&quot;'">
+  <node pkg="gnss_ros_driver" type="gnss_ros_driver" name="um982_nmea_navsatfix_node" output="screen">
     <param name="port" value="$(arg port)" />
     <param name="baudrate" value="$(arg baudrate)" />
     <param name="frame_id" value="$(arg frame_id)" />
