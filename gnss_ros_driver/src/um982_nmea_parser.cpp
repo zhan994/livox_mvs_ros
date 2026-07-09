@@ -293,6 +293,16 @@ ParseResult Um982NmeaParser::ParseGga(const std::string &raw_sentence,
   // fields[4]  longitude
   // fields[5]  E/W
   // fields[6]  fix quality
+  // 0 = 失效
+  // 1 = 单点定位
+  // 2 = 差分定位
+  // 3 = GPS PPS 模式
+  // 4 = RTK Int
+  // 5 = RTK Float
+  // 6 = 惯导模式
+  // 7 = 手动输入模式
+  // 8 = 模拟器模式
+
   // fields[7]  number of satellites
   // fields[8]  HDOP
   // fields[9]  altitude above MSL

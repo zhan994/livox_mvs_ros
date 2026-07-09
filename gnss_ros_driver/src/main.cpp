@@ -16,6 +16,16 @@ namespace {
 
 constexpr double kSecondsPerDay = 86400.0;
 
+constexpr int kFixQualityInvalid = 0;
+constexpr int kFixQualitySingle = 1;
+constexpr int kFixQualityDifferential = 2;
+constexpr int kFixQualityGpsPps = 3;
+constexpr int kFixQualityRtkInt = 4;
+constexpr int kFixQualityRtkFloat = 5;
+constexpr int kFixQualityIns = 6;
+constexpr int kFixQualityManual = 7;
+constexpr int kFixQualitySimulator = 8;
+
 bool ParseUtcToSecondsOfDay(const std::string &utc, double *seconds_of_day) {
   if (seconds_of_day == nullptr || utc.size() < 6) {
     return false;
@@ -55,6 +65,22 @@ double UtcTimeDiffSec(double lhs_sec, double rhs_sec) {
   return diff;
 }
 
+bool IsFixQualityUsable(int fix_quality) {
+  switch (fix_quality) {
+  case kFixQualitySingle:
+  case kFixQualityDifferential:
+  case kFixQualityGpsPps:
+  case kFixQualityRtkInt:
+  case kFixQualityRtkFloat:
+  case kFixQualityIns:
+  case kFixQualityManual:
+  case kFixQualitySimulator:
+    return true;
+  default:
+    return false;
+  }
+}
+
 } // namespace
 
 class Um982NmeaNavSatFixNode {
@@ -62,7 +88,7 @@ public:
   Um982NmeaNavSatFixNode()
       : nh_(), private_nh_("~"), serial_(io_service_),
         parser_(um982_nmea::Um982NmeaParser::ChecksumMode::kRequire) {
-    private_nh_.param<std::string>("port", port_, "/dev/ttyACM0");
+    private_nh_.param<std::string>("port", port_, "/dev/ttyUSB0");
     private_nh_.param<int>("baudrate", baudrate_, 115200);
     private_nh_.param<std::string>("frame_id", frame_id_, "gnss_ant");
     private_nh_.param<std::string>("topic", topic_, "/fix");
@@ -194,7 +220,7 @@ private:
   }
 
   void HandleGGA(const um982_nmea::GGA_Data &gga) {
-    if (gga.fix_quality == 0 && !publish_invalid_) {
+    if (!IsFixQualityUsable(gga.fix_quality) && !publish_invalid_) {
       return;
     }
 
@@ -328,7 +354,7 @@ private:
 
   void PublishFix(const um982_nmea::GGA_Data &gga,
                   const um982_nmea::CovarianceData *covariance_data) {
-    if (gga.fix_quality == 0 && !publish_invalid_) {
+    if (!IsFixQualityUsable(gga.fix_quality) && !publish_invalid_) {
       return;
     }
 
@@ -361,14 +387,25 @@ private:
                      sensor_msgs::NavSatStatus::SERVICE_COMPASS |
                      sensor_msgs::NavSatStatus::SERVICE_GALILEO;
 
-    if (fix_quality == 0) {
+    switch (fix_quality) {
+    case kFixQualityInvalid:
       status.status = sensor_msgs::NavSatStatus::STATUS_NO_FIX;
-    } else if (fix_quality == 9) {
-      status.status = sensor_msgs::NavSatStatus::STATUS_SBAS_FIX;
-    } else if (fix_quality == 2 || fix_quality == 4 || fix_quality == 5) {
+      break;
+    case kFixQualityDifferential:
+    case kFixQualityRtkInt:
+    case kFixQualityRtkFloat:
       status.status = sensor_msgs::NavSatStatus::STATUS_GBAS_FIX;
-    } else {
+      break;
+    case kFixQualitySingle:
+    case kFixQualityGpsPps:
+    case kFixQualityIns:
+    case kFixQualityManual:
+    case kFixQualitySimulator:
       status.status = sensor_msgs::NavSatStatus::STATUS_FIX;
+      break;
+    default:
+      status.status = sensor_msgs::NavSatStatus::STATUS_NO_FIX;
+      break;
     }
 
     return status;
