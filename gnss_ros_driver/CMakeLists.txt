@@ -23,3 +23,8 @@ target_include_directories(gnss_ros_driver PUBLIC
   include
   ${catkin_INCLUDE_DIRS} 
   ${Boost_INCLUDE_DIRS})
+
+catkin_install_python(PROGRAMS
+  scripts/plot_fix_bag.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
