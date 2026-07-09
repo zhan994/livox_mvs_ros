@@ -62,7 +62,7 @@ public:
   Um982NmeaNavSatFixNode()
       : nh_(), private_nh_("~"), serial_(io_service_),
         parser_(um982_nmea::Um982NmeaParser::ChecksumMode::kRequire) {
-    private_nh_.param<std::string>("port", port_, "/dev/ttyACM0");
+    private_nh_.param<std::string>("port", port_, "/dev/ttyUSB0");
     private_nh_.param<int>("baudrate", baudrate_, 115200);
     private_nh_.param<std::string>("frame_id", frame_id_, "gnss_ant");
     private_nh_.param<std::string>("topic", topic_, "/fix");
