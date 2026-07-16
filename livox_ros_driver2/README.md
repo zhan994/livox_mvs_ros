@@ -1,3 +1,12 @@
+# Mid360 Sync
+
+Mid360 向相机传时间戳：
+      
+- Mid360 从网包的 GPS/PTP 时间类型取出 ns 时间戳：src/comm/pub_handler.cpp:265
+- livox_ros_driver2 在分发线程中创建/映射同一个 timeshare 文件：src/lddc.cpp:196
+- PointCloud2 和 CustomMsg 均会写 pointt->low：src/lddc.cpp:277
+
+
 # Update
 
 Added the time synchronization function
