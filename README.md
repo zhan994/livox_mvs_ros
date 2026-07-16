@@ -41,6 +41,14 @@ roslaunch start_all start_mvs_mid360.launch
 roslaunch gnss_ros_driver gnss_ros_driver.launch
 ```
 
+You can easily view trajectory of gnss data recorded as `sensor_msgs/NavSatFix`.
+
+```bash
+cd <path-to-ws>/src/livox_mvs_ros/gnss_ros_driver/scripts/
+python3 plot_fix_bag.py <path-to-bag> --plot-3d
+```
+
+
 ## Related Work
 
 - [LIV_handhold: LiDAR_Inertial_Visual_Handhold](https://github.com/xuankuzcr/LIV_handhold)
