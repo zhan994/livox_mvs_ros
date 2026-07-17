@@ -17,15 +17,17 @@
 - **mvs_ros_driver**: for Hikvision MV-CU013-A0UC.
 - **gnss_ros_driver**: for GNSS/RTK UM982.
 
-***Note!!! In the current setup, PPS and GPRMC signals are simulated by STM32 board rather than provided by a real GNSS receiver. Therefore, GNSS/RTK data are synchronized in software and their timestamps are compensated and aligned with the STM32-based time reference.***
 
 | Item  | Pics  | Purchasing list  |
 | :------------: | :------------: | :------------: |
 | Livox AVIA | <img src="imgs/livox_avia.png" width=20%  /> | [Livox AVIA](https://store.dji.com/hk-en/product/livox-avia) |
-| Livox MID360 | <img src="imgs/livox_mid360.png" width=20%  /> | [Livox MID360](https://store.dji.com/hk-en/product/livox-mid-360) |
+| Livox MID360 | <img src="imgs/livox_mid360.jpg" width=20%  /> | [Livox MID360](https://store.dji.com/hk-en/product/livox-mid-360) |
 | CMOS | <img src="imgs/cmos.jpg" width=20%  /> | [MV-CU013-A0UC ](https://www.hikrobotics.com/en/machinevision/productdetail/?id=6247) |
 | Camera Len | <img src="imgs/len.jpg" width=20%  /> | [ MVL-HF0628M-6MPE](https://m.tb.cn/h.gXmtLRX2UYzGDzH?tk=hIS7WGPOY0y) |
 | STM32 | <img src="imgs/stm32.jpg" width=25%  /> | [STM32F103C8T6](https://m.tb.cn/h.ggkS9Kp?tk=orRfWz6M784) |
+
+
+***Note!!! In the current setup, PPS and GPRMC signals are simulated by STM32 board rather than provided by a real GNSS receiver. Therefore, GNSS/RTK data are synchronized in software and their timestamps are compensated and aligned with the STM32-based time reference.***
 
 
 ## Third-party
@@ -45,11 +47,13 @@ cd livox_mvs_ros/livox_ros_driver2
 
 cd ../../..
 source devel/setup.bash
+
+# for indoor
 roslaunch start_all start_mvs_mid360.launch
 
-# for gnss_ros_driver
-# sudo chmod 777 <serial_port>
-roslaunch gnss_ros_driver gnss_ros_driver.launch
+# for outdoor, using gnss_ros_driver for um982
+# sudo chmod 777 <serial_um982>
+roslaunch start_all start_mvs_mid360_gnss.launch
 ```
 
 You can easily view trajectory of gnss data recorded as `sensor_msgs/NavSatFix`.
@@ -59,7 +63,7 @@ cd <path-to-ws>/src/livox_mvs_ros/gnss_ros_driver/scripts/
 python3 plot_fix_bag.py <path-to-bag> --plot-3d
 ```
 
-For Livox Avia using ROS-One on Ubuntu22.04, please `sudo apt remove brltty` to avoid serial-port disconnection.
+***Note!!! For Livox AVIA or other sensors requiring serial communication (such as via CH340), please run the command `sudo apt remove brltty` to prevent serial connection interruptions.***
 
 
 ## Related Work
