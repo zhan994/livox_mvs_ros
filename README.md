@@ -19,6 +19,15 @@
 
 ***Note!!! In the current setup, PPS and GPRMC signals are simulated by STM32 board rather than provided by a real GNSS receiver. Therefore, GNSS/RTK data are synchronized in software and their timestamps are compensated and aligned with the STM32-based time reference.***
 
+| Item  | Pics  | Purchasing list  |
+| :------------: | :------------: | :------------: |
+| Livox AVIA | <img src="imgs/livox_avia.png" width=20%  /> | [Livox AVIA](https://store.dji.com/hk-en/product/livox-avia) |
+| Livox MID360 | <img src="imgs/livox_mid360.png" width=20%  /> | [Livox MID360](https://store.dji.com/hk-en/product/livox-mid-360) |
+| CMOS | <img src="imgs/cmos.jpg" width=20%  /> | [MV-CU013-A0UC ](https://www.hikrobotics.com/en/machinevision/productdetail/?id=6247) |
+| Camera Len | <img src="imgs/len.jpg" width=20%  /> | [ MVL-HF0628M-6MPE](https://m.tb.cn/h.gXmtLRX2UYzGDzH?tk=hIS7WGPOY0y) |
+| STM32 | <img src="imgs/stm32.jpg" width=25%  /> | [STM32F103C8T6](https://m.tb.cn/h.ggkS9Kp?tk=orRfWz6M784) |
+
+
 ## Third-party
 
 - [Livox-SDK](https://github.com/Livox-SDK/Livox-SDK): for Livox AVIA.
