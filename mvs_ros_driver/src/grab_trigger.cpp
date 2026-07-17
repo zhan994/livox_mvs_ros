@@ -1,5 +1,7 @@
 #include "MvCameraControl.h"
+#include <cerrno>
 #include <chrono>
+#include <cstring>
 #include <cv_bridge/cv_bridge.h>
 #include <fcntl.h>
 #include <image_transport/image_transport.h>
@@ -20,7 +22,9 @@ struct time_stamp {
   int64_t high;
   int64_t low;
 };
-time_stamp *pointt;
+time_stamp *pointt = (time_stamp *)MAP_FAILED;
+time_stamp *offsett =
+    (time_stamp *)MAP_FAILED; // Offset between system time and GPRMC time
 
 enum PixelFormat : unsigned int {
   RGB8 = 0x02180014,
@@ -225,15 +229,26 @@ static void *WorkThread(void *pUser) {
     nRet = MV_CC_GetOneFrameTimeout(pUser, pData, stParam.nCurValue * 3,
                                     &stImageInfo, 1000);
     if (nRet == MV_OK) {
-
+      ros::Time sys_time = ros::Time::now();
       ros::Time rcv_time;
+      ros::Duration offset_sys_to_gprmc; // note: sys = gprmc + offset
       if (trigger_enable && pointt != MAP_FAILED && pointt->low != 0) {
         // 赋值共享内存中的时间戳给相机帧
         int64_t b = pointt->low;
         double time_pc = b / 1000000000.0;
         rcv_time = ros::Time(time_pc);
+        offset_sys_to_gprmc = sys_time - rcv_time;
+        if (offsett != MAP_FAILED)
+          offsett->low = offset_sys_to_gprmc.toNSec();
+
+        // 打印时间戳信息
+        ROS_INFO("Received frame with timestamp= %.4f\n", time_pc);
+        ROS_INFO("Offset sys to gprmc: %.4f, %ld\n",
+                 offset_sys_to_gprmc.toSec(), offset_sys_to_gprmc.toNSec());
       } else {
         rcv_time = ros::Time::now();
+        ROS_WARN("Received frame with PC timestamp= %.4f, pointt->low=%ld\n",
+                 rcv_time.toSec(), pointt->low);
       }
 
       // std::string debug_msg;
@@ -319,10 +334,62 @@ int main(int argc, char **argv) {
       "/home/" + std::string(user_name) + "/timeshare";
   const char *shared_file_name = path_for_time_stamp.c_str();
 
-  int fd = open(shared_file_name, O_RDWR);
+  int fd = open(shared_file_name, O_CREAT | O_RDWR, 0666);
+  if (fd == -1) {
+    ROS_ERROR("Failed to open timestamp shared file %s: %s", shared_file_name,
+              strerror(errno));
+  } else {
+    struct stat file_stat;
+    if (fstat(fd, &file_stat) == -1) {
+      ROS_ERROR("Failed to get timestamp shared file size for %s: %s",
+                shared_file_name, strerror(errno));
+    } else if (file_stat.st_size < (off_t)sizeof(time_stamp) &&
+               ftruncate(fd, sizeof(time_stamp)) == -1) {
+      ROS_ERROR("Failed to resize timestamp shared file %s: %s",
+                shared_file_name, strerror(errno));
+    } else {
+      pointt = (time_stamp *)mmap(NULL, sizeof(time_stamp),
+                                  PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+      if (pointt == MAP_FAILED) {
+        ROS_ERROR("Failed to mmap timestamp shared file %s: %s",
+                  shared_file_name, strerror(errno));
+      } else {
+        ROS_INFO("Timestamp shared file mapped: %s", shared_file_name);
+      }
+    }
+    close(fd);
+  }
 
-  pointt = (time_stamp *)mmap(NULL, sizeof(time_stamp), PROT_READ | PROT_WRITE,
-                              MAP_SHARED, fd, 0);
+  std::string path_for_offset =
+      "/home/" + std::string(user_name) + "/timeshare_offset";
+  const char *shared_file_name_offset = path_for_offset.c_str();
+  int fd_offset = open(shared_file_name_offset, O_CREAT | O_RDWR, 0666);
+  if (fd_offset == -1) {
+    ROS_ERROR("Failed to open timestamp offset shared file %s: %s",
+              shared_file_name_offset, strerror(errno));
+  } else {
+    struct stat file_stat_offset;
+    if (fstat(fd_offset, &file_stat_offset) == -1) {
+      ROS_ERROR("Failed to get timestamp offset shared file size for %s: %s",
+                shared_file_name_offset, strerror(errno));
+    } else if (file_stat_offset.st_size < (off_t)sizeof(time_stamp) &&
+               ftruncate(fd_offset, sizeof(time_stamp)) == -1) {
+      ROS_ERROR("Failed to resize timestamp offset shared file %s: %s",
+                shared_file_name_offset, strerror(errno));
+    } else {
+      offsett =
+          (time_stamp *)mmap(NULL, sizeof(time_stamp), PROT_READ | PROT_WRITE,
+                             MAP_SHARED, fd_offset, 0);
+      if (offsett == MAP_FAILED) {
+        ROS_ERROR("Failed to mmap timestamp offset shared file %s: %s",
+                  shared_file_name_offset, strerror(errno));
+      } else {
+        ROS_INFO("Timestamp offset shared file mapped: %s",
+                 shared_file_name_offset);
+      }
+    }
+    close(fd_offset);
+  }
 
   SetupSignalHandler();
 
@@ -493,7 +560,13 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  munmap(pointt, sizeof(time_stamp));
+  if (pointt != MAP_FAILED) {
+    munmap(pointt, sizeof(time_stamp));
+  }
+
+  if (offsett != MAP_FAILED) {
+    munmap(offsett, sizeof(time_stamp));
+  }
 
   return 0;
 }

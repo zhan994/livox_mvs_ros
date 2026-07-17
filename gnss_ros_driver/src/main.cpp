@@ -1,9 +1,17 @@
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
 #include <cstdlib>
 #include <deque>
+#include <fcntl.h>
 #include <limits>
+#include <signal.h>
+#include <stdio.h>
 #include <string>
+#include <sys/ipc.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <boost/asio.hpp>
 #include <ros/ros.h>
@@ -81,6 +89,11 @@ bool IsFixQualityUsable(int fix_quality) {
   }
 }
 
+struct time_stamp {
+  int64_t high;
+  int64_t low;
+};
+
 } // namespace
 
 class Um982NmeaNavSatFixNode {
@@ -88,12 +101,46 @@ public:
   Um982NmeaNavSatFixNode()
       : nh_(), private_nh_("~"), serial_(io_service_),
         parser_(um982_nmea::Um982NmeaParser::ChecksumMode::kRequire) {
+    // timestamp offset shared,  sys = gprmc + offset
+    const char *user_name = getlogin();
+    std::string path_for_offset =
+        "/home/" + std::string(user_name) + "/timeshare_offset";
+    const char *shared_file_name_offset = path_for_offset.c_str();
+    int fd_offset = open(shared_file_name_offset, O_CREAT | O_RDWR, 0666);
+    if (fd_offset == -1) {
+      ROS_ERROR("Failed to open timestamp offset shared file %s: %s",
+                shared_file_name_offset, strerror(errno));
+    } else {
+      struct stat file_stat_offset;
+      if (fstat(fd_offset, &file_stat_offset) == -1) {
+        ROS_ERROR("Failed to get timestamp offset shared file size for %s: %s",
+                  shared_file_name_offset, strerror(errno));
+      } else if (file_stat_offset.st_size < (off_t)sizeof(time_stamp) &&
+                 ftruncate(fd_offset, sizeof(time_stamp)) == -1) {
+        ROS_ERROR("Failed to resize timestamp offset shared file %s: %s",
+                  shared_file_name_offset, strerror(errno));
+      } else {
+        offsett_ =
+            (time_stamp *)mmap(NULL, sizeof(time_stamp), PROT_READ | PROT_WRITE,
+                               MAP_SHARED, fd_offset, 0);
+        if (offsett_ == MAP_FAILED) {
+          ROS_ERROR("Failed to mmap timestamp offset shared file %s: %s",
+                    shared_file_name_offset, strerror(errno));
+        } else {
+          ROS_INFO("Timestamp offset shared file mapped: %s",
+                   shared_file_name_offset);
+        }
+      }
+      close(fd_offset);
+    }
+
     private_nh_.param<std::string>("port", port_, "/dev/ttyUSB0");
     private_nh_.param<int>("baudrate", baudrate_, 115200);
     private_nh_.param<std::string>("frame_id", frame_id_, "gnss_ant");
     private_nh_.param<std::string>("topic", topic_, "/fix");
     private_nh_.param<std::string>("covariance_mode", covariance_mode_,
                                    "diagonal");
+    private_nh_.param<bool>("time_sync_flag", time_sync_flag_, false);
 
     // For 10 Hz NMEA, one epoch interval is about 0.1 s.
     // 0.02 s is strict enough while still tolerating formatting jitter.
@@ -122,6 +169,16 @@ public:
     ROS_INFO_STREAM("covariance_mode: " << covariance_mode_);
     ROS_INFO_STREAM("max_match_time_diff_sec: " << max_match_time_diff_sec_);
     ROS_INFO_STREAM("cache_timeout_sec: " << cache_timeout_sec_);
+  }
+
+  ~Um982NmeaNavSatFixNode() {
+    if (offsett_ != MAP_FAILED) {
+      munmap(offsett_, sizeof(time_stamp));
+    }
+
+    if (serial_.is_open()) {
+      serial_.close();
+    }
   }
 
   void Spin() {
@@ -360,7 +417,16 @@ private:
 
     sensor_msgs::NavSatFix fix_msg;
 
-    fix_msg.header.stamp = ros::Time::now();
+    ros::Time rcv_time = ros::Time::now();
+    if (time_sync_flag_ && offsett_ != MAP_FAILED && offsett_->low != 0) {
+      int64_t b = offsett_->low;
+      double offset_sys_to_gprmc = b / 1000000000.0;
+      rcv_time -= ros::Duration(offset_sys_to_gprmc);
+      ROS_INFO("Offset applied= %.4f, GNSS timestamp= %.4f",
+               offset_sys_to_gprmc, rcv_time.toSec());
+    }
+
+    fix_msg.header.stamp = rcv_time;
     fix_msg.header.frame_id = frame_id_;
 
     fix_msg.status = ConvertFixQualityToStatus(gga.fix_quality);
@@ -474,6 +540,9 @@ private:
 
   std::deque<PendingGGA> pending_ggas_;
   std::deque<PendingGST> pending_gsts_;
+
+  bool time_sync_flag_ = false;
+  time_stamp *offsett_ = (time_stamp *)MAP_FAILED;
 };
 
 int main(int argc, char **argv) {

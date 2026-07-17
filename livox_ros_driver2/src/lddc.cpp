@@ -281,7 +281,7 @@ namespace livox_ros
       pointt->low = timestamp;
       // printf("****************timestamp=%ld\n", timestamp);
 
-      ROS_ERROR("pointt->low=%ld\n", pointt->low);
+      ROS_WARN("pointt=%.4f\n", pointt->low / 1000000000.0);
     }
   }
 
@@ -307,6 +307,7 @@ namespace livox_ros
         timestamp = pkg.base_time;
       }
       pointt->low = timestamp;
+      ROS_WARN("pointt=%.4f\n", pointt->low / 1000000000.0);
       // ROS_ERROR("Custom Point: %f\n", pointt->low*0.000000001);
              // printf("****************timestamp=%ld\n", timestamp);
       // ROS_ERROR("****************PublishCustomPointcloud\n");
