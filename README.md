@@ -17,6 +17,8 @@
 - **mvs_ros_driver**: for Hikvision MV-CU013-A0UC.
 - **gnss_ros_driver**: for GNSS/RTK UM982.
 
+***Note!!! In the current setup, PPS and GPRMC signals are simulated by STM32 board rather than provided by a real GNSS receiver. Therefore, GNSS/RTK data are synchronized in software and their timestamps are compensated and aligned with the STM32-based time reference.***
+
 ## Third-party
 
 - [Livox-SDK](https://github.com/Livox-SDK/Livox-SDK): for Livox AVIA.
@@ -47,6 +49,8 @@ You can easily view trajectory of gnss data recorded as `sensor_msgs/NavSatFix`.
 cd <path-to-ws>/src/livox_mvs_ros/gnss_ros_driver/scripts/
 python3 plot_fix_bag.py <path-to-bag> --plot-3d
 ```
+
+For Livox Avia using ROS-One on Ubuntu22.04, please `sudo apt remove brltty` to avoid serial-port disconnection.
 
 
 ## Related Work
